@@ -154,13 +154,13 @@ const AdminDashboard = () => {
             
             <div>
               <h1 className="text-sm md:text-lg font-bold text-slate-800 capitalize leading-none">
-                {active.replace("-", " ")}
+                {active === "users" ? "User Management" : active === "credits" ? "Credit Control" : "Global Campaigns"}
               </h1>
               <nav className="flex items-center gap-2 mt-1">
-                <span className="hidden xs:inline text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                <span className=" xs:inline text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                   Dashboard
                 </span>
-                <ChevronRight size={10} className="hidden xs:inline text-slate-300" />
+                <ChevronRight size={10} className=" xs:inline text-slate-300" />
                 <span className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider">
                   {active}
                 </span>
@@ -170,7 +170,7 @@ const AdminDashboard = () => {
 
           <div className="flex items-center gap-3 md:gap-6">
             {/* Credit Display Badge - Hidden on small mobile */}
-            <div className=" sm:flex items-center gap-3 bg-zinc-50 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl border border-zinc-100 shadow-sm">
+            <div className="flex items-center gap-2 md:gap-3 bg-slate-50 px-3 py-1.5 md:px-4 md:py-2 rounded-2xl border border-slate-100 shadow-sm">
               <div className="bg-emerald-100 p-1.5 rounded-lg">
                 <Wallet size={16} className="text-emerald-600" />
               </div>
