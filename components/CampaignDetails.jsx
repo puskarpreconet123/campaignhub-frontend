@@ -16,7 +16,7 @@ const CampaignDetails = () => {
     const fetchDetail = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:5000/api/user/campaign/${id}`, {
+        const res = await axios.get(`https://campaignhub-backend.onrender.com/api/user/campaign/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCampaign(res.data);
