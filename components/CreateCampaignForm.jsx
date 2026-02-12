@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Send, Loader2, Users, MessageSquare, Plus, X, FileText, Image as ImageIcon } from "lucide-react";
 import axios from "axios";
+import { useEffect } from "react";
 
 const CreateCampaignForm = () => {
   const [campaignName, setCampaignName] = useState("");
@@ -11,25 +12,43 @@ const CreateCampaignForm = () => {
   const [pdfVideo, setPdfVideo] = useState([]);
   const[loading, setLoading] = useState(false)
 
-  const user = JSON.parse(localStorage.getItem("user"))
-   const userCredits = user.credits
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const userCredits = user?.credits || 0;
+
+  useEffect(() => {
+  return () => {
+    images.forEach(img => URL.revokeObjectURL(img.preview));
+    pdfVideo.forEach(file => URL.revokeObjectURL(file.preview));
+    };
+  }, []);
 
   const handleAddNumbers = () => {
-    const numbers = phoneInput
-      .split(/[\s,]+/)
-      .map(num => num.trim())
-      .filter(num => /^\d{10}$/.test(num));
+  const numbers = phoneInput
+    .split(/[\s,]+/)
+    .map(num => num.trim())
+    .map(num => {
+      // Remove non-digits
+      const digits = num.replace(/\D/g, "");
 
-    const uniqueNumbers = [...new Set([...phoneNumbers, ...numbers])];
+      // If 12 digits and starts with 91, remove 91
+      if (digits.length === 12 && digits.startsWith("91")) {
+        return digits.slice(2);
+      }
 
-    if (uniqueNumbers.length > userCredits) {
-      alert("Total numbers exceed available credits");
-      return;
-    }
+      return digits;
+    })
+    .filter(num => /^\d{10}$/.test(num)); // Allow only 10-digit numbers
 
-    setPhoneNumbers(uniqueNumbers);
-    setPhoneInput("");
-  };
+  const uniqueNumbers = [...new Set([...phoneNumbers, ...numbers])];
+
+  if (uniqueNumbers.length > userCredits) {
+    alert("Total numbers exceed available credits");
+    return;
+  }
+
+  setPhoneNumbers(uniqueNumbers);
+  setPhoneInput("");
+};
 
   const removeNumber = (index) => {
     setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index));
@@ -51,6 +70,14 @@ const CreateCampaignForm = () => {
     const valid = files.filter(file => file.size <= 5 * 1024 * 1024);
     setPdfVideo(prev => [...prev, ...valid]);
   };
+
+  const removeImage = (index) => {
+  setImages(images.filter((_, i) => i !== index));
+};
+
+const removeFile = (index) => {
+  setPdfVideo(pdfVideo.filter((_, i) => i !== index));
+};
 
   const handleSubmit = async e => {
   e.preventDefault();
@@ -179,7 +206,11 @@ const CreateCampaignForm = () => {
                 <button
                   type="button"
                   onClick={handleAddNumbers}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1 shadow-md"
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1 shadow-md transition-colors
+${!phoneInput.trim()
+  ? "bg-indigo-300 text-white cursor-not-allowed"
+  : "bg-indigo-600 hover:bg-indigo-700 text-white"
+}`}
                 >
                   <Plus className="w-4 h-4" /> Add to List
                 </button>
@@ -187,15 +218,47 @@ const CreateCampaignForm = () => {
 
               {/* Number Chips */}
               {phoneNumbers.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-white rounded-lg border">
-                  {phoneNumbers.map((num, idx) => (
-                    <span key={idx} className="bg-slate-100 text-slate-700 px-2 py-1 rounded text-xs flex items-center gap-1 border border-slate-200">
-                      {num}
-                      <X className="w-3 h-3 cursor-pointer hover:text-red-500" onClick={() => removeNumber(idx)} />
-                    </span>
-                  ))}
-                </div>
-              )}
+  <div className="mt-4 p-3 bg-white rounded-lg border space-y-2">
+
+    {/* Total Count */}
+    <p className="text-sm font-semibold text-slate-700">
+      Total Numbers Added: 
+      <span className="text-indigo-600 ml-1">
+        {phoneNumbers.length}
+      </span>
+    </p>
+
+    {/* Preview */}
+    <p className="text-xs text-slate-500">
+      Preview: {phoneNumbers.slice(0,5).join(", ")}
+      {phoneNumbers.length > 5 && " ..."}
+    </p>
+
+    {/* Download Button */}
+    <button
+      type="button"
+      onClick={() => {
+        const content = phoneNumbers.join("\n");
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "campaign_numbers.txt";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+      }}
+      className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md font-semibold"
+    >
+      Download Numbers (.txt)
+    </button>
+
+  </div>
+)}
+
             </div>
           </section>
 
@@ -231,7 +294,33 @@ const CreateCampaignForm = () => {
                   <span className="text-[10px] text-slate-400">JPG only, Max 2MB</span>
                   <input type="file" className="hidden" multiple accept=".jpg" onChange={handleImageUpload} />
                 </label>
-                {images.length > 0 && <p className="mt-2 text-[10px] text-green-600 text-center">{images.length} images selected</p>}
+                {images.length > 0 && (
+  <div className="mt-3">
+    <p className="text-[10px] text-green-600 text-center mb-2">
+      {images.length} images selected
+    </p>
+
+    <div className="grid grid-cols-3 gap-2">
+      {images.map((img, index) => (
+        <div key={index} className="relative group">
+          <img
+            src={URL.createObjectURL(img)}
+            alt="preview"
+            className="w-full h-20 object-cover rounded-lg border"
+          />
+          <button
+            type="button"
+            onClick={() => removeImage(index)}
+            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-90 hover:opacity-100"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
               </div>
 
               {/* File Upload */}
@@ -242,7 +331,49 @@ const CreateCampaignForm = () => {
                   <span className="text-[10px] text-slate-400">Max 5MB per file</span>
                   <input type="file" className="hidden" multiple onChange={handleDocUpload} />
                 </label>
-                {pdfVideo.length > 0 && <p className="mt-2 text-[10px] text-green-600 text-center">{pdfVideo.length} files selected</p>}
+                {pdfVideo.length > 0 && (
+  <div className="mt-3">
+    <p className="text-[10px] text-green-600 text-center mb-2">
+      {pdfVideo.length} files selected
+    </p>
+
+    <div className="grid grid-cols-2 gap-2">
+      {pdfVideo.map((file, index) => (
+        <div key={index} className="relative group border rounded-lg p-2 bg-white flex items-center gap-2">
+          
+          {/* Preview Type */}
+          {file.type.startsWith("video/") ? (
+            <video
+              src={URL.createObjectURL(file)}
+              className="w-16 h-16 object-cover rounded"
+            />
+          ) : (
+            <div className="w-16 h-16 flex items-center justify-center bg-slate-100 rounded">
+              <FileText className="w-6 h-6 text-indigo-500" />
+            </div>
+          )}
+
+          {/* File Name */}
+          <div className="flex-1 overflow-hidden">
+            <p className="text-[10px] font-semibold text-slate-600 truncate">
+              {file.name}
+            </p>
+          </div>
+
+          {/* Remove Button */}
+          <button
+            type="button"
+            onClick={() => removeFile(index)}
+            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-90 hover:opacity-100"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
               </div>
             </div>
           </section>

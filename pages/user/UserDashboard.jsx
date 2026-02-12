@@ -14,15 +14,15 @@ import UserCampaignHistory from "../../components/UserCampaignHistory";
 import { useNavigate } from "react-router-dom";
 
 const UserDashboard = () => {
-  const [active, setActive] = useState("create");
+  const [active, setActive] = useState("history");
   const navigate = useNavigate();
   
   // Safely parse user data
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "User", role: "Client", credits: 0 };
+  const user = JSON.parse(localStorage.getItem("user")) || { name: "User", role: "user", credits: 0 };
 
   const menuItems = [
-    { id: "create", label: "Create Campaign", icon: <PlusCircle size={20} /> },
     { id: "history", label: "My Campaigns", icon: <History size={20} /> },
+    { id: "create", label: "Create Campaign", icon: <PlusCircle size={20} /> },
   ];
     
   const handleLogout = () => {
