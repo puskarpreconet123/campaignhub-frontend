@@ -6,6 +6,7 @@ import ProtectedRoute from "../routes/ProtectedRoute";
 
 import AdminDashboard from "../pages/admin/AdminDashboard";
 import UserDashboard from "../pages/user/UserDashboard";
+import CampaignDetails from "../components/CampaignDetails";
 
 function App() {
   const token = localStorage.getItem("token")
@@ -49,6 +50,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/user-dashboard/campaign/:id" element={<CampaignDetails />} />
       </Routes>
     </Router>
   );
