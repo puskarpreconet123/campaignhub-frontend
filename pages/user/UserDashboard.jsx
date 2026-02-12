@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { 
   PlusCircle, 
   History, 
@@ -16,9 +16,17 @@ import { useNavigate } from "react-router-dom";
 const UserDashboard = () => {
   const [active, setActive] = useState("history");
   const navigate = useNavigate();
-  
-  // Safely parse user data
-  const user = JSON.parse(localStorage.getItem("user")) || { name: "User", role: "user", credits: 0 };
+  const [user, setUser] = useState(()=>JSON.parse(localStorage.getItem("user")) || { name: "User", role: "user", credits: 0 })
+
+useEffect(() => {
+  const syncUser = () => {
+    const updated = JSON.parse(localStorage.getItem("user")) || {};
+    setUser(updated);
+  };
+
+  window.addEventListener("userUpdated", syncUser);
+  return () => window.removeEventListener("userUpdated", syncUser);
+}, []);
 
   const menuItems = [
     { id: "history", label: "My Campaigns", icon: <History size={20} /> },

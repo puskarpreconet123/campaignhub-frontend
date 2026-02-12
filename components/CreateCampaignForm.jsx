@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Send, Loader2, Users, MessageSquare, Plus, X, FileText, Image as ImageIcon } from "lucide-react";
 import axios from "axios";
-import { useEffect } from "react";
 
 const CreateCampaignForm = () => {
   const [campaignName, setCampaignName] = useState("");
@@ -10,48 +9,65 @@ const CreateCampaignForm = () => {
   const [message, setMessage] = useState("");
   const [images, setImages] = useState([]);
   const [pdfVideo, setPdfVideo] = useState([]);
-  const[loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  // 1. Initialize user from state for reactivity
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem("user");
+    return saved ? JSON.parse(saved) : { credits: 0 };
+  });
+  
   const userCredits = user?.credits || 0;
 
+  // 2. Sync Credits with Backend on Load (Handles Admin Refunds)
   useEffect(() => {
-  return () => {
-    images.forEach(img => URL.revokeObjectURL(img.preview));
-    pdfVideo.forEach(file => URL.revokeObjectURL(file.preview));
+    const fetchLatestUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/user/profile", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        // Sync local storage and state
+        localStorage.setItem("user", JSON.stringify(res.data));
+        setUser(res.data);
+        window.dispatchEvent(new Event("userUpdated"));
+
+      } catch (err) {
+        console.error("Failed to sync credits:", err);
+      }
+    };
+
+    fetchLatestUser();
+
+    return () => {
+      images.forEach(img => img.preview && URL.revokeObjectURL(img.preview));
+      pdfVideo.forEach(file => file.preview && URL.revokeObjectURL(file.preview));
     };
   }, []);
 
   const handleAddNumbers = () => {
-  const numbers = phoneInput
-    .split(/[\s,]+/)
-    .map(num => num.trim())
-    .map(num => {
-      // Remove non-digits
-      const digits = num.replace(/\D/g, "");
+    const numbers = phoneInput
+      .split(/[\s,]+/)
+      .map(num => num.trim())
+      .map(num => {
+        const digits = num.replace(/\D/g, "");
+        if (digits.length === 12 && digits.startsWith("91")) {
+          return digits.slice(2);
+        }
+        return digits;
+      })
+      .filter(num => /^\d{10}$/.test(num));
 
-      // If 12 digits and starts with 91, remove 91
-      if (digits.length === 12 && digits.startsWith("91")) {
-        return digits.slice(2);
-      }
+    const uniqueNumbers = [...new Set([...phoneNumbers, ...numbers])];
 
-      return digits;
-    })
-    .filter(num => /^\d{10}$/.test(num)); // Allow only 10-digit numbers
+    if (uniqueNumbers.length > userCredits) {
+      alert("Total numbers exceed available credits");
+      return;
+    }
 
-  const uniqueNumbers = [...new Set([...phoneNumbers, ...numbers])];
-
-  if (uniqueNumbers.length > userCredits) {
-    alert("Total numbers exceed available credits");
-    return;
-  }
-
-  setPhoneNumbers(uniqueNumbers);
-  setPhoneInput("");
-};
-
-  const removeNumber = (index) => {
-    setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index));
+    setPhoneNumbers(uniqueNumbers);
+    setPhoneInput("");
   };
 
   const wordCount = message.trim() ? message.trim().split(/\s+/).length : 0;
@@ -72,73 +88,74 @@ const CreateCampaignForm = () => {
   };
 
   const removeImage = (index) => {
-  setImages(images.filter((_, i) => i !== index));
-};
+    setImages(images.filter((_, i) => i !== index));
+  };
 
-const removeFile = (index) => {
-  setPdfVideo(pdfVideo.filter((_, i) => i !== index));
-};
+  const removeFile = (index) => {
+    setPdfVideo(pdfVideo.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async e => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!campaignName) return alert("Campaign name required");
-  if (phoneNumbers.length === 0) return alert("Add phone numbers");
-  if (!message) return alert("Message required");
+    if (!campaignName) return alert("Campaign name required");
+    if (phoneNumbers.length === 0) return alert("Add phone numbers");
+    if (!message) return alert("Message required");
 
-  setLoading(true); // Start Loading
-  try {
-    const token = localStorage.getItem("token");
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
 
-    const formData = new FormData();
-    formData.append("campaignName", campaignName);
-    formData.append("message", message);
+      const formData = new FormData();
+      formData.append("campaignName", campaignName);
+      formData.append("message", message);
 
-    phoneNumbers.forEach(num => {
-      formData.append("phoneNumbers", num);
-    });
+      phoneNumbers.forEach(num => {
+        formData.append("phoneNumbers", num);
+      });
 
-    images.forEach(img => {
-      formData.append("images", img);
-    });
+      images.forEach(img => {
+        formData.append("images", img);
+      });
 
-    pdfVideo.forEach(file => {
-      formData.append("pdfVideo", file);
-    });
+      pdfVideo.forEach(file => {
+        formData.append("pdfVideo", file);
+      });
 
-    const res = await axios.post(
-      "https://campaignhub-backend.onrender.com/api/campaign/create",
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
+      const res = await axios.post(
+        "https://campaignhub-backend.onrender.com/api/campaign/create",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          }
         }
-      }
-    );
-    localStorage.setItem("user", JSON.stringify(res.data.userDoc))
-    setLoading(false)
-    alert("Campaign created successfully");
-    
-    setCampaignName("");
-    setPhoneNumbers([]);
-    setMessage("");
-    setImages([]);
-    setPdfVideo([]);
-    
-    
-  } catch (err) {
-  setLoading(false)
-  console.log("Campaign error:", err.response?.data || err.message);
-  alert(err.response?.data?.message || "Campaign creation failed");
-}
+      );
 
-};
-
+      // Update local storage and UI state with new credit balance
+      localStorage.setItem("user", JSON.stringify(res.data.userDoc));
+      setUser(res.data.userDoc);
+      
+      setLoading(false);
+      alert("Campaign created successfully");
+      
+      setCampaignName("");
+      setPhoneNumbers([]);
+      setMessage("");
+      setImages([]);
+      setPdfVideo([]);
+      
+    } catch (err) {
+      setLoading(false);
+      console.log("Campaign error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Campaign creation failed");
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto my-10 min-h-screen p-4 md:p-8">
       {loading && (
-        <div className="fixed inset-0 z-100 flex flex-col items-center justify-center bg-indigo-900/20 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-indigo-900/20 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center border border-indigo-100">
             <div className="relative">
               <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
@@ -149,9 +166,8 @@ const removeFile = (index) => {
           </div>
         </div>
       )}
+
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-        
-        {/* Header */}
         <div className="bg-indigo-600 p-6">
           <h2 className="text-2xl font-bold text-white flex items-center gap-2">
             <MessageSquare className="w-6 h-6" />
@@ -161,8 +177,7 @@ const removeFile = (index) => {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-8">
-          
-          {/* Campaign Name Section */}
+          {/* Section 01: Basic Info */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-indigo-700 font-semibold border-b pb-2">
               <span className="bg-indigo-100 p-1.5 rounded-lg">01</span>
@@ -180,7 +195,7 @@ const removeFile = (index) => {
             </div>
           </section>
 
-          {/* Phone Numbers Section */}
+          {/* Section 02: Recipients */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-indigo-700 font-semibold border-b pb-2">
               <span className="bg-indigo-100 p-1.5 rounded-lg">02</span>
@@ -199,76 +214,56 @@ const removeFile = (index) => {
               <div className="flex justify-between items-center mt-3">
                 <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
                   <Users className="w-4 h-4" />
-                  Credits: <span className={phoneNumbers.length > userCredits ? "text-red-500" : "text-indigo-600"}>
+                  Credits: <span className={phoneNumbers.length > userCredits ? "text-red-500" : "text-indigo-600 font-bold"}>
                     {phoneNumbers.length} / {userCredits}
                   </span>
                 </p>
                 <button
                   type="button"
                   onClick={handleAddNumbers}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1 shadow-md transition-colors
-${!phoneInput.trim()
-  ? "bg-indigo-300 text-white cursor-not-allowed"
-  : "bg-indigo-600 hover:bg-indigo-700 text-white"
-}`}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1 shadow-md transition-colors ${!phoneInput.trim() ? "bg-indigo-300 text-white cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}
                 >
                   <Plus className="w-4 h-4" /> Add to List
                 </button>
               </div>
 
-              {/* Number Chips */}
               {phoneNumbers.length > 0 && (
-  <div className="mt-4 p-3 bg-white rounded-lg border space-y-2">
-
-    {/* Total Count */}
-    <p className="text-sm font-semibold text-slate-700">
-      Total Numbers Added: 
-      <span className="text-indigo-600 ml-1">
-        {phoneNumbers.length}
-      </span>
-    </p>
-
-    {/* Preview */}
-    <p className="text-xs text-slate-500">
-      Preview: {phoneNumbers.slice(0,5).join(", ")}
-      {phoneNumbers.length > 5 && " ..."}
-    </p>
-
-    {/* Download Button */}
-    <button
-      type="button"
-      onClick={() => {
-        const content = phoneNumbers.join("\n");
-        const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "campaign_numbers.txt";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        URL.revokeObjectURL(url);
-      }}
-      className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md font-semibold"
-    >
-      Download Numbers (.txt)
-    </button>
-
-  </div>
-)}
-
+                <div className="mt-4 p-3 bg-white rounded-lg border space-y-2">
+                  <p className="text-sm font-semibold text-slate-700">
+                    Total Numbers Added: <span className="text-indigo-600 ml-1">{phoneNumbers.length}</span>
+                  </p>
+                  <p className="text-xs text-slate-500 truncate">
+                    Preview: {phoneNumbers.slice(0,5).join(", ")}{phoneNumbers.length > 5 && " ..."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const content = phoneNumbers.join("\n");
+                      const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
+                      const url = URL.createObjectURL(blob);
+                      const link = document.createElement("a");
+                      link.href = url;
+                      link.download = "campaign_numbers.txt";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md font-semibold"
+                  >
+                    Download Numbers (.txt)
+                  </button>
+                </div>
+              )}
             </div>
           </section>
 
-          {/* Content Section */}
+          {/* Section 03: Message Content */}
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-indigo-700 font-semibold border-b pb-2">
               <span className="bg-indigo-100 p-1.5 rounded-lg">03</span>
               <h3>Message Content</h3>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Your Message</label>
               <textarea
@@ -295,32 +290,18 @@ ${!phoneInput.trim()
                   <input type="file" className="hidden" multiple accept=".jpg" onChange={handleImageUpload} />
                 </label>
                 {images.length > 0 && (
-  <div className="mt-3">
-    <p className="text-[10px] text-green-600 text-center mb-2">
-      {images.length} images selected
-    </p>
-
-    <div className="grid grid-cols-3 gap-2">
-      {images.map((img, index) => (
-        <div key={index} className="relative group">
-          <img
-            src={URL.createObjectURL(img)}
-            alt="preview"
-            className="w-full h-20 object-cover rounded-lg border"
-          />
-          <button
-            type="button"
-            onClick={() => removeImage(index)}
-            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-90 hover:opacity-100"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
+                  <div className="mt-3">
+                    <p className="text-[10px] text-green-600 text-center mb-2">{images.length} selected</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {images.map((img, index) => (
+                        <div key={index} className="relative group">
+                          <img src={URL.createObjectURL(img)} alt="preview" className="w-full h-20 object-cover rounded-lg border" />
+                          <button type="button" onClick={() => removeImage(index)} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-90"><X className="w-3 h-3" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* File Upload */}
@@ -332,69 +313,37 @@ ${!phoneInput.trim()
                   <input type="file" className="hidden" multiple onChange={handleDocUpload} />
                 </label>
                 {pdfVideo.length > 0 && (
-  <div className="mt-3">
-    <p className="text-[10px] text-green-600 text-center mb-2">
-      {pdfVideo.length} files selected
-    </p>
-
-    <div className="grid grid-cols-2 gap-2">
-      {pdfVideo.map((file, index) => (
-        <div key={index} className="relative group border rounded-lg p-2 bg-white flex items-center gap-2">
-          
-          {/* Preview Type */}
-          {file.type.startsWith("video/") ? (
-            <video
-              src={URL.createObjectURL(file)}
-              className="w-16 h-16 object-cover rounded"
-            />
-          ) : (
-            <div className="w-16 h-16 flex items-center justify-center bg-slate-100 rounded">
-              <FileText className="w-6 h-6 text-indigo-500" />
-            </div>
-          )}
-
-          {/* File Name */}
-          <div className="flex-1 overflow-hidden">
-            <p className="text-[10px] font-semibold text-slate-600 truncate">
-              {file.name}
-            </p>
-          </div>
-
-          {/* Remove Button */}
-          <button
-            type="button"
-            onClick={() => removeFile(index)}
-            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-90 hover:opacity-100"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-
+                  <div className="mt-3">
+                    <p className="text-[10px] text-green-600 text-center mb-2">{pdfVideo.length} files selected</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {pdfVideo.map((file, index) => (
+                        <div key={index} className="relative group border rounded-lg p-2 bg-white flex items-center gap-2">
+                          {file.type.startsWith("video/") ? (
+                            <video src={URL.createObjectURL(file)} className="w-10 h-10 object-cover rounded" />
+                          ) : (
+                            <FileText className="w-10 h-10 text-indigo-500" />
+                          )}
+                          <p className="text-[10px] font-semibold truncate flex-1">{file.name}</p>
+                          <button type="button" onClick={() => removeFile(index)} className="bg-red-500 text-white rounded-full p-1"><X className="w-3 h-3" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </section>
 
-          {/* Action Buttons */}
           <div className="pt-4 flex gap-3">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-3"
             >
               {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Finalizing Campaign...
-                </>
+                <><Loader2 className="w-5 h-5 animate-spin" /> Processing...</>
               ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  Launch Campaign
-                </>
+                <><Send className="w-5 h-5" /> Launch Campaign</>
               )}
             </button>
           </div>
