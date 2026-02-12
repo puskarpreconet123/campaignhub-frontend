@@ -135,7 +135,7 @@ const CreateCampaignForm = () => {
       // Update local storage and UI state with new credit balance
       localStorage.setItem("user", JSON.stringify(res.data.userDoc));
       setUser(res.data.userDoc);
-      
+      window.dispatchEvent(new Event("userUpdated"));
       setLoading(false);
       alert("Campaign created successfully");
       

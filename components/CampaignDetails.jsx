@@ -120,9 +120,9 @@ const downloadNumbersAsTxt = () => {
               <div>
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Delivery Overview</h3>
                 <div className="grid grid-cols-1 gap-4">
-                  <div className="bg-slate-50 p-6 rounded-4xl border border-slate-100 group hover:bg-white hover:shadow-xl transition-all">
+                  <div className="bg-slate-50 p-6 rounded-4xl border border-slate-100 ">
                     <div className="flex items-center gap-4">
-                      <div className="bg-indigo-100 p-3 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors"><Users size={24}/></div>
+                      <div className="bg-indigo-100 p-3 rounded-2xl text-indigo-600 transition-colors"><Users size={24}/></div>
                       <div>
                         <p className="text-3xl font-black text-slate-800">{campaign.phoneNumbers?.length || 0}</p>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Recipients</p>
@@ -131,7 +131,7 @@ const downloadNumbersAsTxt = () => {
                   </div>
                   <div className="bg-slate-50 p-6 rounded-4xl border border-slate-100">
                     <div className="flex items-center gap-4">
-                      <div className="bg-slate-200 p-3 rounded-2xl text-slate-600"><Calendar size={24}/></div>
+                      <div className="bg-red-100 p-3 rounded-2xl text-slate-600"><Calendar size={24}/></div>
                       <div>
                         <p className="text-lg font-black text-slate-800">
                           {new Date(campaign.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
