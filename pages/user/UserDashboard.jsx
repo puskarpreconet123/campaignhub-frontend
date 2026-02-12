@@ -139,8 +139,8 @@ const UserDashboard = () => {
                 {active === "create" ? "Launch Campaign" : "Campaign History"}
               </h1>
               <nav className="flex items-center gap-2 mt-1">
-                <span className="hidden xs:inline text-[10px] text-slate-400 font-bold uppercase tracking-wider">Workspace</span>
-                <ChevronRight size={10} className="hidden xs:inline text-slate-300" />
+                <span className=" xs:inline text-[10px] text-slate-400 font-bold uppercase tracking-wider">Workspace</span>
+                <ChevronRight size={10} className=" xs:inline text-slate-300" />
                 <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">{active}</span>
               </nav>
             </div>
