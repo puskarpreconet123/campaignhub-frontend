@@ -10,6 +10,7 @@ const CreateCampaignForm = () => {
   const [images, setImages] = useState([]);
   const [pdfVideo, setPdfVideo] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [invalidCount, setInvalidCount] = useState(0);
 
   // 1. Initialize user from state for reactivity
   const [user, setUser] = useState(() => {
@@ -24,7 +25,7 @@ const CreateCampaignForm = () => {
     const fetchLatestUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("https://campaignhub-backend.onrender.com/api/user/profile", {
+        const res = await axios.get("http://localhost:5000/api/user/profile", {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -46,32 +47,38 @@ const CreateCampaignForm = () => {
     };
   }, []);
 
-  const handleAddNumbers = () => {
-    const numbers = phoneInput
-      .split(/[\s,]+/)
-      .map(num => num.trim())
-      .map(num => {
-        const digits = num.replace(/\D/g, "");
-        if (digits.length === 12 && digits.startsWith("91")) {
-          return digits.slice(2);
-        }
-        return digits;
-      })
-      .filter(num => /^\d{10}$/.test(num));
 
-    const uniqueNumbers = [...new Set([...phoneNumbers, ...numbers])];
+const handleAddNumbers = () => {
+  if (!phoneInput.trim()) return;
 
-    if (uniqueNumbers.length > userCredits) {
-      alert("Total numbers exceed available credits");
-      return;
+  const rawNumbers = phoneInput.split(/[\s,]+/).map(n => n.trim());
+
+  const cleaned = rawNumbers.map(num => {
+    const digits = num.replace(/\D/g, "");
+    if (digits.length === 12 && digits.startsWith("91")) {
+      return digits.slice(2);
     }
+    return digits;
+  });
 
-    setPhoneNumbers(uniqueNumbers);
-    setPhoneInput("");
-  };
+  const valid = cleaned.filter(num => /^\d{10}$/.test(num));
+  const invalid = cleaned.filter(num => !/^\d{10}$/.test(num));
 
-  const wordCount = message.trim() ? message.trim().split(/\s+/).length : 0;
-  const maxWords = 1024;
+  const uniqueNumbers = [...new Set([...phoneNumbers, ...valid])];
+
+  if (uniqueNumbers.length > userCredits) {
+    alert("Total numbers exceed available credits");
+    return;
+  }
+
+  setPhoneNumbers(uniqueNumbers);
+  setInvalidCount(prev => prev + invalid.length);
+  setPhoneInput("");
+};
+
+
+  const inputCount =  message ? message.length : 0;
+  const maxInputs = 1024;
 
   const handleImageUpload = e => {
     const files = Array.from(e.target.files);
@@ -123,7 +130,7 @@ const CreateCampaignForm = () => {
       });
 
       const res = await axios.post(
-        "https://campaignhub-backend.onrender.com/api/campaign/create",
+        "http://localhost:5000/api/campaign/create",
         formData,
         {
           headers: {
@@ -210,6 +217,7 @@ const CreateCampaignForm = () => {
                 className="w-full outline-none border-slate-300 rounded-lg p-3 min-h-[100px] focus:ring-2 focus:ring-indigo-500 border"
                 value={phoneInput}
                 onChange={e => setPhoneInput(e.target.value)}
+                onBlur={handleAddNumbers}
               />
               <div className="flex justify-between items-center mt-3">
                 <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
@@ -218,43 +226,57 @@ const CreateCampaignForm = () => {
                     {phoneNumbers.length} / {userCredits}
                   </span>
                 </p>
-                <button
-                  type="button"
-                  onClick={handleAddNumbers}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1 shadow-md transition-colors ${!phoneInput.trim() ? "bg-indigo-300 text-white cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700 text-white"}`}
-                >
-                  <Plus className="w-4 h-4" /> Add to List
-                </button>
               </div>
 
               {phoneNumbers.length > 0 && (
-                <div className="mt-4 p-3 bg-white rounded-lg border space-y-2">
-                  <p className="text-sm font-semibold text-slate-700">
-                    Total Numbers Added: <span className="text-indigo-600 ml-1">{phoneNumbers.length}</span>
-                  </p>
-                  <p className="text-xs text-slate-500 truncate">
-                    Preview: {phoneNumbers.slice(0,5).join(", ")}{phoneNumbers.length > 5 && " ..."}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const content = phoneNumbers.join("\n");
-                      const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
-                      const url = URL.createObjectURL(blob);
-                      const link = document.createElement("a");
-                      link.href = url;
-                      link.download = "campaign_numbers.txt";
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      URL.revokeObjectURL(url);
-                    }}
-                    className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-md font-semibold"
-                  >
-                    Download Numbers (.txt)
-                  </button>
-                </div>
-              )}
+  <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
+    {/* Header Section */}
+    <div className="flex items-center justify-between mb-4">
+      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+        Validation Summary
+      </h4>
+      <button
+        type="button"
+        onClick={() => {
+          const content = phoneNumbers.join("\n");
+          const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "campaign_numbers.txt";
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }}
+        className="flex items-center gap-2 text-xs bg-white hover:bg-slate-50 text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg font-medium transition-all shadow-sm active:scale-95"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="避4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        Download .txt
+      </button>
+    </div>
+
+    {/* Stats Grid */}
+    <div className="grid grid-cols-3 gap-3">
+      <div className="bg-white p-3 rounded-lg border border-slate-100 text-center">
+        <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Total</p>
+        <p className="text-lg font-bold text-slate-700">{phoneNumbers.length + invalidCount}</p>
+      </div>
+      
+      <div className="bg-green-50 p-3 rounded-lg border border-green-100 text-center">
+        <p className="text-[10px] uppercase font-bold text-green-500 mb-1">Valid</p>
+        <p className="text-lg font-bold text-green-700">{phoneNumbers.length}</p>
+      </div>
+
+      <div className="bg-red-50 p-3 rounded-lg border border-red-100 text-center">
+        <p className="text-[10px] uppercase font-bold text-red-400 mb-1">Invalid</p>
+        <p className="text-lg font-bold text-red-600">{invalidCount}</p>
+      </div>
+    </div>
+  </div>
+)}
             </div>
           </section>
 
@@ -274,8 +296,8 @@ const CreateCampaignForm = () => {
                 onChange={e => setMessage(e.target.value)}
               />
               <div className="flex justify-between mt-1">
-                <span className={`text-xs font-medium ${wordCount > maxWords ? 'text-red-500' : 'text-slate-500'}`}>
-                  {wordCount} / {maxWords} words
+                <span className={`text-xs font-medium ${inputCount > maxInputs ? 'text-red-500' : 'text-slate-500'}`}>
+                  {inputCount} / {maxInputs} Characters
                 </span>
               </div>
             </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import { 
   PlusCircle, 
   History, 
@@ -8,17 +9,22 @@ import {
   ChevronRight,
   Sparkles,
   Menu,
-  X
+  X,
+  WalletCards
 } from "lucide-react";
-import CreateCampaignForm from "../../components/CreateCampaignForm";
-import UserCampaignHistory from "../../components/UserCampaignHistory";
+import CreateCampaignForm from "../../components/userComponents/CreateCampaignForm";
+import UserCampaignHistory from "../../components/userComponents/UserCampaignHistory";
 import { useNavigate } from "react-router-dom";
+import UserCreditHistory from "../../components/userComponents/UserCreditHistory";
 
 const UserDashboard = () => {
   const [active, setActive] = useState("history");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const [user, setUser] = useState(()=>JSON.parse(localStorage.getItem("user")) || { name: "User", role: "user", credits: 0 })
+
+const location = useLocation();
+const isCampaignDetail = location.pathname.includes("/campaign/");
 
   useEffect(() => {
     const syncUser = () => {
@@ -33,6 +39,7 @@ const UserDashboard = () => {
   const menuItems = [
     { id: "history", label: "My Campaigns", icon: <History size={20} /> },
     { id: "create", label: "Create Campaign", icon: <PlusCircle size={20} /> },
+    { id: "transactions", label: "Credit History", icon: <WalletCards size={20} /> },
   ];
     
   const handleLogout = () => {
@@ -82,6 +89,9 @@ const UserDashboard = () => {
                 onClick={() => {
                   setActive(item.id);
                   setIsSidebarOpen(false);
+                    if (isCampaignDetail) {
+    navigate("/user-dashboard");
+  }
                 }}
                 className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 group ${
                   active === item.id
@@ -136,7 +146,7 @@ const UserDashboard = () => {
             </button>
             <div>
               <h1 className="text-sm md:text-lg font-bold text-slate-800 capitalize leading-none">
-                {active === "create" ? "Launch Campaign" : "Campaign History"}
+                {active === "create" ? "Launch Campaign" : active=== "history"? "Campaign History" : "Credit History"}
               </h1>
               <nav className="flex items-center gap-2 mt-1">
                 <span className=" xs:inline text-[10px] text-slate-400 font-bold uppercase tracking-wider">Workspace</span>
@@ -189,16 +199,25 @@ const UserDashboard = () => {
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-              {active === "create" ? (
-                <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 p-4 md:p-8">
-                   <CreateCampaignForm userCredits={user.credits} />
-                </div>
-              ) : (
-                <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 p-4 md:p-8">
-                   <UserCampaignHistory />
-                </div>
-              )}
-            </div>
+
+  {isCampaignDetail ? (
+    <Outlet />
+  ) : active === "create" ? (
+    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 p-4 md:p-8">
+      <CreateCampaignForm userCredits={user.credits} />
+    </div>
+  ) : active === "history" ? (
+    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 p-4 md:p-8">
+      <UserCampaignHistory />
+    </div>
+  ) : (
+    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 p-4 md:p-8">
+      <UserCreditHistory />
+    </div>
+  )}
+
+</div>
+
           </div>
         </div>
       </main>

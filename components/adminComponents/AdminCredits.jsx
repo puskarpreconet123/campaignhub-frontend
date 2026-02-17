@@ -14,7 +14,7 @@ const AdminCredits = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "https://campaignhub-backend.onrender.com/api/admin/add-credits",
+        "http://localhost:5000/api/admin/add-credits",
         { userId, credits: Number(credits) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -89,11 +89,11 @@ const AdminCredits = () => {
             className={`w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg md:text-base ${
               loading
                 ? "bg-zinc-100 text-zinc-400 cursor-not-allowed"
-                : "bg-zinc-900 text-white hover:bg-zinc-800 shadow-zinc-200 active:scale-[0.98]"
+                : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200 active:scale-[0.98]"
             }`}
           >
             {loading ? "Processing..." : "Confirm Transaction"}
-            {!loading && <ArrowRight size={18} className="text-emerald-400" />}
+            {!loading && <ArrowRight size={18}  />}
           </button>
         </form>
 

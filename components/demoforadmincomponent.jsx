@@ -6,7 +6,7 @@ import {
   AlertCircle, PlayCircle, ExternalLink, MoreVertical 
 } from "lucide-react";
 import StatusBox from "./adminCampaignManagement/StatusBox"
-const AdminCampaigns = () => {
+const AdminUserCampaigns = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedUser, setExpandedUser] = useState(null);
@@ -17,7 +17,7 @@ const AdminCampaigns = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const res = await axios.get("https://campaignhub-backend.onrender.com/api/admin/all-campaigns", {
+      const res = await axios.get("http://localhost:5000/api/admin/all-campaigns", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(res.data || []);
@@ -32,7 +32,7 @@ const AdminCampaigns = () => {
   const handleStatusUpdate = async (campaignId, newStatus) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.patch(`https://campaignhub-backend.onrender.com/api/admin/campaign/${campaignId}`, 
+      await axios.patch(`http://localhost:5000/api/admin/campaign/${campaignId}`, 
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` }}
       );
@@ -111,4 +111,4 @@ const AdminCampaigns = () => {
   );
 };
 
-export default AdminCampaigns;
+export default AdminUserCampaigns;

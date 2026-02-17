@@ -19,7 +19,7 @@ const AdminCreateUser = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "https://campaignhub-backend.onrender.com/api/admin/create-user",
+        "http://localhost:5000/api/admin/create-user",
         { name, email: loginId, password },
         { headers: { Authorization: `Bearer ${token}` } }
       );
