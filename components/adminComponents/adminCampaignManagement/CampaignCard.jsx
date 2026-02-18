@@ -3,6 +3,7 @@ import { Users, ChevronDown, Clock, PlayCircle, CheckCircle2, AlertCircle } from
 
 const CampaignCard = ({ camp, onStatusUpdate }) => {
   const [showMenu, setShowMenu] = useState(false);
+  const isRejected = camp.status === "rejected";
 
   const statusOptions = [
     { id: 'pending', label: 'Pending', color: 'bg-amber-400' },
@@ -30,8 +31,16 @@ const CampaignCard = ({ camp, onStatusUpdate }) => {
       {/* Bottom Section: Action Button */}
       <div className="relative">
         <button 
-          onClick={() => setShowMenu(!showMenu)}
-          className="w-full flex items-center justify-between px-2.5 py-1.5 bg-zinc-50 hover:bg-zinc-100 text-zinc-500 rounded-lg transition-all border border-zinc-100"
+          disabled={isRejected}
+          onClick={() => {
+            if (!isRejected) setShowMenu(!showMenu);
+          }}
+          className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg border transition-all
+            ${
+              isRejected
+                ? "bg-zinc-100 text-zinc-400 cursor-not-allowed border-zinc-100"
+                : "bg-zinc-50 hover:bg-zinc-100 text-zinc-500 border-zinc-100"
+            }`}
         >
           <span className="text-[9px] font-black uppercase tracking-widest">Update Status</span>
           <ChevronDown size={10} className={`transition-transform duration-300 ${showMenu ? 'rotate-180' : ''}`} />
@@ -48,6 +57,7 @@ const CampaignCard = ({ camp, onStatusUpdate }) => {
                 <button
                   key={opt.id}
                   onClick={() => {
+                    if (camp.status === "rejected") return;
                     onStatusUpdate(camp._id, opt.id);
                     setShowMenu(false);
                   }}

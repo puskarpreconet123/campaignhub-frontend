@@ -23,7 +23,7 @@ const AdminCredits = () => {
       storageUser.credits = res.data.newAdminBalance; 
       localStorage.setItem("user", JSON.stringify(storageUser));
 
-      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event("userUpdated"));
 
       alert(`Success! Your new balance is: ${res.data.newAdminBalance}`);
       setUserId("");
@@ -36,6 +36,7 @@ const AdminCredits = () => {
   };
 
   return (
+    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50  border-zinc-200 p-4 md:p-8">
     <div className="max-w-4xl mx-auto">
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6 md:mb-10">
@@ -128,6 +129,7 @@ const AdminCredits = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

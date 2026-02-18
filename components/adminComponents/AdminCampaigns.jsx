@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
-import { RefreshCw, ExternalLink, CheckCircle2, AlertCircle, Clock, History } from "lucide-react";
+import { RefreshCw, ExternalLink, CheckCircle2, AlertCircle, Clock, History, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import StatusBox from "./adminCampaignManagement/StatusBox";
+import CampaignCard from "./adminCampaignManagement/CampaignCard";
 
 const AdminCampaigns = ({ filter = "" }) => {
   const [campaigns, setCampaigns] = useState([]);
@@ -65,6 +67,7 @@ useEffect(() => {
       // Updated mapping to handle the new .populate() structure
       const formattedCampaigns = res.data.campaigns || []
       setCampaigns(formattedCampaigns);
+        console.log(res.data.campaigns)
 
       setTotalPages(res.data.totalPages)
       setTotalCampaigns(res.data.totalCampaigns)
@@ -81,36 +84,6 @@ useEffect(() => {
   };
   }, [limit, page, filter, debouncedSearch]);
 
-  const handleStatusUpdate = async (campaignId, newStatus) => {
-    try {
-      const token = localStorage.getItem("token");
-      await axios.patch(
-        `http://localhost:5000/api/admin/campaign/${campaignId}`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update local state
-      setCampaigns((prev) =>
-        prev.map((c) => (c._id === campaignId ? { ...c, status: newStatus } : c))
-      );
-
-      // --- THE FIX ---
-      // This tells the Dashboard Header to refresh the Admin's credits 
-      // immediately (important for refunds/deductions)
-      window.dispatchEvent(new Event("userUpdated"));
-
-    } catch {
-      alert("Failed to update status.");
-    }
-  };
-
-  const statusOptions = [
-    { id: "pending", label: "Pending", color: "bg-amber-400" },
-    { id: "processing", label: "Processing", color: "bg-blue-400" },
-    { id: "completed", label: "Completed", color: "bg-emerald-400" },
-    { id: "rejected", label: "Rejected", color: "bg-red-400" }
-  ];
 
   const getStatusConfig = (status) => {
     // Cleaner object-based lookup instead of switch
@@ -123,7 +96,7 @@ useEffect(() => {
     return config[status] || config.pending;
   };
 
-  if (loading) {
+  if (loading && campaigns.length == 0) {
     return (
       <div className="flex flex-col justify-center items-center py-24 space-y-4">
         <RefreshCw className="animate-spin text-emerald-600" size={40} />
@@ -186,22 +159,32 @@ useEffect(() => {
     </div>
 
     {/* Limit selector */}
-    <div className="w-full sm:w-48">
-      <input
-        type="number"
-        value={limitInput}
-        onChange={(e) => setLimitInput(e.target.value)}
-        min="1"
-        placeholder="Rows per page"
-        className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200
-                   focus:outline-none focus:ring-2 focus:ring-emerald-500
-                   focus:border-emerald-500 transition shadow-sm
-                   placeholder:text-slate-400"
-      />
-    </div>
+<input
+  type="number"
+  value={limitInput}
+  onChange={(e) => {
+    const val = e.target.value;
+    // SOLUTION: Only update state if the value is empty (allowing backspace) 
+    // or if the number is 1 or greater.
+    if (val === "" || parseInt(val) >= 1) {
+      setLimitInput(val);
+    }
+  }}
+  onKeyDown={(e) => {
+    // PREVENT: Typing '-', 'e' (scientific notation), or '+' 
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  }}
+  min="1"
+  placeholder="Rows per page"
+  className="w-full sm:w-40 px-4 py-2.5 text-sm rounded-xl border border-slate-200
+             focus:outline-none focus:ring-2 focus:ring-indigo-500"
+/>
 
   </div>
 </div>
+{/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
@@ -213,7 +196,6 @@ useEffect(() => {
               <th className="px-6 py-4">Date</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4 text-center">Details</th>
-              <th className="px-6 py-4">Update</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -231,7 +213,7 @@ useEffect(() => {
                     <td className="px-6 py-4 text-sm text-slate-800">{c.title}</td>
                     <td className="px-6 py-4 text-sm">
                       <p className="font-medium text-slate-700">{c.userId.email}</p>
-                      <p className="text-xs text-slate-400">{c.userEmail}</p>
+                      <p className="text-xs text-slate-400">{c.userId.name}</p>
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-slate-800">{c.phoneNumbers?.length || 0}</td>
                     <td className="px-6 py-4 text-[11px] text-slate-500">
@@ -244,24 +226,9 @@ useEffect(() => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      <button onClick={() => navigate(`/admin-dashboard/campaign/${c._id}`)} className="underline text-xs text-slate-600 hover:text-black flex items-center gap-1 justify-center">
+                      <button onClick={() => navigate(`/admin-dashboard/campaigns/${c._id}`)} className="underline text-xs text-slate-600 hover:text-black flex items-center gap-1 justify-center">
                         View Details <ExternalLink size={12} />
                       </button>
-                    </td>
-                    <td className="px-6 py-4 relative">
-                      <button onClick={() => setOpenMenuId(openMenuId === c._id ? null : c._id)} className="px-3 py-1 text-[10px] font-bold uppercase bg-zinc-100 rounded-lg hover:bg-zinc-200">Update</button>
-                      {openMenuId === c._id && (
-                        <>
-                          <div className="fixed inset-0 z-30" onClick={() => setOpenMenuId(null)} />
-                          <div className="absolute right-0 mt-2 w-36 bg-white border border-zinc-200 rounded-xl shadow-xl z-40 p-1">
-                            {statusOptions.map((opt) => (
-                              <button key={opt.id} onClick={() => { handleStatusUpdate(c._id, opt.id); setOpenMenuId(null); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] font-bold uppercase hover:bg-zinc-50 ${c.status === opt.id ? "text-zinc-900 bg-zinc-50" : "text-zinc-400"}`}>
-                                <div className={`w-2 h-2 rounded-full ${opt.color}`} /> {opt.label}
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      )}
                     </td>
                   </tr>
                 );
@@ -270,35 +237,42 @@ useEffect(() => {
           </tbody>
         </table>
       </div>
-      {/* implemented page navigation buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 p-4 bg-slate-50">
+{/* Mobile-Friendly Pagination */}
+<div className="flex items-center justify-between p-4 bg-slate-50 border-t border-slate-100">
+  
+  {/* Previous Button */}
+  <button
+    disabled={page <= 1}
+    onClick={() => setPage((p) => p - 1)}
+    className="flex items-center justify-center px-3 py-2 text-sm font-bold rounded-xl border border-slate-200 bg-white shadow-sm 
+               hover:bg-slate-100 active:scale-95 transition-all 
+               disabled:opacity-30 disabled:pointer-events-none text-slate-700"
+  >
+    <ChevronLeft size={18} className="sm:mr-1" />
+    <span className="hidden sm:inline">Previous</span>
+  </button>
 
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-xl border border-slate-200 bg-white shadow-sm 
-                      hover:bg-slate-100 active:scale-95 transition 
-                      disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ← Previous
-          </button>
-
+  {/* Page Indicator */}
+  <div className="flex flex-col items-center">
           <p className="text-sm font-medium text-slate-600">
             Page <span className="font-semibold text-slate-800">{page}</span> 
             {" "}of{" "}
             <span className="font-semibold text-slate-800">{totalPages}</span>
           </p>
+  </div>
 
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-xl border border-slate-200 bg-white shadow-sm 
-                      hover:bg-slate-100 active:scale-95 transition 
-                      disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Next →
-          </button>
-        </div>
+  {/* Next Button */}
+  <button
+    disabled={page >= totalPages}
+    onClick={() => setPage((p) => p + 1)}
+    className="flex items-center justify-center px-3 py-2 text-sm font-bold rounded-xl border border-slate-200 bg-white shadow-sm 
+               hover:bg-slate-100 active:scale-95 transition-all 
+               disabled:opacity-30 disabled:pointer-events-none text-slate-700"
+  >
+    <span className="hidden sm:inline">Next</span>
+    <ChevronRight size={18} className="sm:ml-1" />
+  </button>
+</div>
     </div>
   );
 };

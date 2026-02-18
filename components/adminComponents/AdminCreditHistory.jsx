@@ -4,7 +4,9 @@ import {
   History,
   RefreshCw,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  ChevronRight,
+  ChevronLeft
 } from "lucide-react";
 
 const AdminCreditHistory = () => {
@@ -158,6 +160,7 @@ const AdminCreditHistory = () => {
               <th className="px-6 py-4">Amount</th>
               <th className="px-6 py-4">Action</th>
               <th className="px-6 py-4">Timestamp</th>
+              <th className="px-6 py-4">Description</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -183,9 +186,9 @@ const AdminCreditHistory = () => {
                         : "text-red-700"}`}
                   >
                     {item.type === "credit" ? (
-                      <ArrowUpRight size={12} strokeWidth={3} />
-                    ) : (
                       <ArrowDownLeft size={12} strokeWidth={3} />
+                    ) : (
+                      <ArrowUpRight size={12} strokeWidth={3} />
                     )}
                     {item.type}
                   </div>
@@ -194,41 +197,53 @@ const AdminCreditHistory = () => {
                 <td className="px-6 py-4 text-[10px] text-slate-500">
                   {new Date(item.createdAt).toLocaleString()}
                 </td>
+
+                  {/* Description */}
+                  <td className="px-6 py-4 text-sm font-medium text-slate-600 text-center">
+                    {item.description}
+                  </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-    {/* implemented page navigation buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0 p-4 bg-slate-50">
+{/* Mobile-Friendly Pagination */}
+<div className="flex items-center justify-between p-4 bg-slate-50 border-t border-slate-100">
+  
+  {/* Previous Button */}
+  <button
+    disabled={page <= 1}
+    onClick={() => setPage((p) => p - 1)}
+    className="flex items-center justify-center px-3 py-2 text-sm font-bold rounded-xl border border-slate-200 bg-white shadow-sm 
+               hover:bg-slate-100 active:scale-95 transition-all 
+               disabled:opacity-30 disabled:pointer-events-none text-slate-700"
+  >
+    <ChevronLeft size={18} className="sm:mr-1" />
+    <span className="hidden sm:inline">Previous</span>
+  </button>
 
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-xl border border-slate-200 bg-white shadow-sm 
-                      hover:bg-slate-100 active:scale-95 transition 
-                      disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            ← Previous
-          </button>
-
+  {/* Page Indicator */}
+  <div className="flex flex-col items-center">
           <p className="text-sm font-medium text-slate-600">
             Page <span className="font-semibold text-slate-800">{page}</span> 
             {" "}of{" "}
             <span className="font-semibold text-slate-800">{totalPages}</span>
           </p>
+  </div>
 
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="w-full sm:w-auto px-4 py-2 text-sm font-medium rounded-xl border border-slate-200 bg-white shadow-sm 
-                      hover:bg-slate-100 active:scale-95 transition 
-                      disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            Next →
-          </button>
-        </div>
+  {/* Next Button */}
+  <button
+    disabled={page >= totalPages}
+    onClick={() => setPage((p) => p + 1)}
+    className="flex items-center justify-center px-3 py-2 text-sm font-bold rounded-xl border border-slate-200 bg-white shadow-sm 
+               hover:bg-slate-100 active:scale-95 transition-all 
+               disabled:opacity-30 disabled:pointer-events-none text-slate-700"
+  >
+    <span className="hidden sm:inline">Next</span>
+    <ChevronRight size={18} className="sm:ml-1" />
+  </button>
+</div>
     </div>
   );
 };

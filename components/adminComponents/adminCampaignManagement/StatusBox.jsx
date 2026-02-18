@@ -46,7 +46,15 @@ const StatusBox = ({ title, icon, color, data, onStatusUpdate }) => {
             <CampaignCard 
               key={camp._id} 
               camp={camp} 
-              onStatusUpdate={onStatusUpdate} 
+                onStatusUpdate={(id, newStatus) => {
+    // Block rejected updates
+    if (camp.status === "rejected") return;
+
+    // Example: prevent completed from changing
+    if (camp.status === "completed") return;
+
+    onStatusUpdate(id, newStatus);
+  }} 
             />
           ))
         ) : (

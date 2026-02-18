@@ -3,7 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { 
   ArrowLeft, Calendar, Users, MessageSquare, Download, 
-  FileText, ImageIcon, Clock, CheckCircle2, AlertCircle, RefreshCw 
+  FileText, ImageIcon, Clock, CheckCircle2, AlertCircle, RefreshCw, 
+  View,
+  FileTextIcon,
+  Eye
 } from "lucide-react";
 
 const CampaignDetails = () => {
@@ -42,6 +45,29 @@ const CampaignDetails = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+  const handleDownload = async (url, type, index) => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    // Creates a clean name like: image_file_1.png
+    link.download = `${type}_file_${index + 1}`;
+    
+    document.body.appendChild(link);
+    link.click();
+    
+    // Cleanup memory
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error("Download failed:", err);
+    // Fallback: open in new tab if blob fails
+    window.open(url, "_blank");
+  }
+};
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -113,27 +139,77 @@ const CampaignDetails = () => {
                 </div>
               </div>
 
-              {/* Assets Section */}
-              <div>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Attachments</p>
-                <div className="space-y-2">
-                  {campaign.media?.length > 0 ? (
-                    campaign.media.map((file, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-all">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          {file.type === "image" ? <ImageIcon className="text-indigo-400 shrink-0" size={16}/> : <FileText className="text-amber-400 shrink-0" size={16}/>}
-                          <span className="text-[10px] font-bold text-slate-600 uppercase truncate">{file.type} File</span>
-                        </div>
-                        <a href={file.url} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-indigo-600">
-                          <Download size={16} />
-                        </a>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-[10px] text-slate-400 italic px-2">No assets attached</p>
-                  )}
-                </div>
-              </div>
+{/* Assets Section */}
+<div className="space-y-3">
+  <div className="flex items-center justify-between px-1">
+    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">
+      Attachments
+    </p>
+    {campaign.media?.length > 0 && (
+      <span className="text-[9px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
+        {campaign.media.length} Files
+      </span>
+    )}
+  </div>
+
+  <div className="space-y-2.5">
+    {campaign.media?.length > 0 ? (
+      campaign.media.map((file, idx) => (
+        <div
+          key={idx}
+          className="group flex items-center justify-between p-3 bg-white border border-slate-100 rounded-2xl hover:border-indigo-200 hover:shadow-md hover:shadow-indigo-500/5 transition-all duration-300"
+        >
+          {/* File Icon & Info */}
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className={`p-2 rounded-xl shrink-0 ${
+              file.type === "image" ? "bg-indigo-50 text-indigo-500" : "bg-amber-50 text-amber-500"
+            }`}>
+              {file.type === "image" ? <ImageIcon size={18} /> : <FileText size={18} />}
+            </div>
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[11px] font-black text-slate-700 uppercase tracking-tight truncate">
+                {file.type} Asset
+              </span>
+              <span className="text-[9px] text-slate-400 font-medium truncate">
+                Click to preview or save
+              </span>
+            </div>
+          </div>
+
+          {/* Action Dock */}
+          <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <a
+              href={file.url}
+              target="_blank"
+              rel="noreferrer"
+              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+              title="Preview"
+            >
+              <Eye size={15} />
+            </a>
+            
+            <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
+
+            <button
+              onClick={() => handleDownload(file.url, file.type, idx)}
+              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white hover:shadow-sm rounded-lg transition-all cursor-pointer"
+              title="Download"
+            >
+              <Download size={15} />
+            </button>
+          </div>
+        </div>
+      ))
+    ) : (
+      <div className="flex flex-col items-center justify-center py-8 px-4 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl">
+        <FileText size={20} className="text-slate-300 mb-2" strokeWidth={1.5} />
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+          No assets attached
+        </p>
+      </div>
+    )}
+  </div>
+</div>
 
               <button
                 onClick={downloadNumbersAsTxt}

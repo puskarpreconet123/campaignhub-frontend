@@ -37,6 +37,7 @@ const AdminCreateUser = () => {
   };
 
   return (
+    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50  border-zinc-200 p-4 md:p-8">
     <div className="max-w-4xl mx-auto px-1 sm:px-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
@@ -165,6 +166,7 @@ const AdminCreateUser = () => {
           </p>
         </div>
       </div>
+    </div>
     </div>
   );
 };

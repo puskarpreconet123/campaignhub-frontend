@@ -18,13 +18,13 @@ import { useNavigate } from "react-router-dom";
 import UserCreditHistory from "../../components/userComponents/UserCreditHistory";
 
 const UserDashboard = () => {
-  const [active, setActive] = useState("history");
+  const [active, setActive] = useState("campaigns");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const [user, setUser] = useState(()=>JSON.parse(localStorage.getItem("user")) || { name: "User", role: "user", credits: 0 })
 
 const location = useLocation();
-const isCampaignDetail = location.pathname.includes("/campaign/");
+const path = location.pathname.split("/")[2] || "campaigns"
 
   useEffect(() => {
     const syncUser = () => {
@@ -37,7 +37,7 @@ const isCampaignDetail = location.pathname.includes("/campaign/");
   }, []);
 
   const menuItems = [
-    { id: "history", label: "My Campaigns", icon: <History size={20} /> },
+    { id: "campaigns", label: "My Campaigns", icon: <History size={20} /> },
     { id: "create", label: "Create Campaign", icon: <PlusCircle size={20} /> },
     { id: "transactions", label: "Credit History", icon: <WalletCards size={20} /> },
   ];
@@ -87,25 +87,22 @@ const isCampaignDetail = location.pathname.includes("/campaign/");
               <button
                 key={item.id}
                 onClick={() => {
-                  setActive(item.id);
+                  navigate(`/user-dashboard/${item.id}`);
                   setIsSidebarOpen(false);
-                    if (isCampaignDetail) {
-    navigate("/user-dashboard");
-  }
                 }}
                 className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl transition-all duration-200 group ${
-                  active === item.id
+                  path === item.id
                     ? "bg-indigo-500/10 text-white border border-indigo-500/20 shadow-lg"
                     : "hover:bg-indigo-900/50 hover:text-indigo-100 border border-transparent"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className={`${active === item.id ? "text-indigo-400" : "text-indigo-500 group-hover:text-indigo-300"}`}>
+                  <span className={`${path === item.id ? "text-indigo-400" : "text-indigo-500 group-hover:text-indigo-300"}`}>
                     {item.icon}
                   </span>
                   <span className="font-medium text-sm">{item.label}</span>
                 </div>
-                {active === item.id && <ChevronRight size={14} className="text-indigo-400 animate-in slide-in-from-left-2" />}
+                {path === item.id && <ChevronRight size={14} className="text-indigo-400 animate-in slide-in-from-left-2" />}
               </button>
             ))}
           </nav>
@@ -146,12 +143,12 @@ const isCampaignDetail = location.pathname.includes("/campaign/");
             </button>
             <div>
               <h1 className="text-sm md:text-lg font-bold text-slate-800 capitalize leading-none">
-                {active === "create" ? "Launch Campaign" : active=== "history"? "Campaign History" : "Credit History"}
+                {path === "create" ? "Launch Campaign" : path=== "campaigns"? "Campaign History" : "Credit History"}
               </h1>
               <nav className="flex items-center gap-2 mt-1">
                 <span className=" xs:inline text-[10px] text-slate-400 font-bold uppercase tracking-wider">Workspace</span>
                 <ChevronRight size={10} className=" xs:inline text-slate-300" />
-                <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">{active}</span>
+                <span className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">{path}</span>
               </nav>
             </div>
           </div>
@@ -174,7 +171,7 @@ const isCampaignDetail = location.pathname.includes("/campaign/");
             <div className="flex items-center gap-2 md:gap-3">
               <div className="text-right hidden md:block">
                 <p className="text-sm font-bold text-slate-800 leading-none">{user.name}</p>
-                <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-widest mt-1">{user.role}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">{user.role}</p>
               </div>
               <div className="w-9 h-9 md:w-10 md:h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 border border-indigo-200 shadow-sm">
                 <User size={18} />
@@ -189,35 +186,18 @@ const isCampaignDetail = location.pathname.includes("/campaign/");
             
             <div className="mb-6 md:mb-8 px-2">
               <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {active === "create" ? "Create New Campaign" : "Campaign Performance"}
+                {path === "create" ? "Create New Campaign" : path === "campaigns"?"Campaign Performance" :  "Past Transactions" }
               </h1>
               <p className="text-sm md:text-base text-slate-500 mt-1 leading-relaxed">
-                {active === "create" 
+                {path === "create" 
                   ? "Target your audience with personalized messaging." 
-                  : "Review and manage your past communication history."}
+                  : path === "campaigns"? "Review and manage your past communication history." :  "Review your past transaction history." }
               </p>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-
-  {isCampaignDetail ? (
-    <Outlet />
-  ) : active === "create" ? (
-    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 p-4 md:p-8">
-      <CreateCampaignForm userCredits={user.credits} />
-    </div>
-  ) : active === "history" ? (
-    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 p-4 md:p-8">
-      <UserCampaignHistory />
-    </div>
-  ) : (
-    <div className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 p-4 md:p-8">
-      <UserCreditHistory />
-    </div>
-  )}
-
-</div>
-
+                  <Outlet />
+            </div>
           </div>
         </div>
       </main>
