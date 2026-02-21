@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import axios from "../../src/utils/axiosInstance";
 import {
   Clock,
   CheckCircle2,
@@ -103,7 +103,7 @@ const UserCampaignHistory = () => {
         setError("");
 
       } catch (err) {
-        if (!axios.isCancel(err)) {
+        if (err.name !== "CanceledError") {
           setError(err.response?.data?.message || "Failed to fetch campaigns");
         }
       } finally {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Send, Loader2, Users, MessageSquare, Plus, X, FileText, Image as ImageIcon } from "lucide-react";
-import axios from "axios";
+import axios from "../../src/utils/axiosInstance";
 
 const CreateCampaignForm = () => {
   const [campaignName, setCampaignName] = useState("");
@@ -11,6 +11,9 @@ const CreateCampaignForm = () => {
   const [pdfVideo, setPdfVideo] = useState([]);
   const [loading, setLoading] = useState(false);
   const [invalidCount, setInvalidCount] = useState(0);
+
+  // set provider
+  const [provider, setProvider] = useState("cloudinary")
 
   // 1. Initialize user from state for reactivity
   const [user, setUser] = useState(() => {
@@ -26,7 +29,7 @@ const CreateCampaignForm = () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get("http://localhost:5000/api/user/profile", {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}`}
         });
         
         // Sync local storage and state
@@ -135,6 +138,7 @@ const handleAddNumbers = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "x-storage-provider" : provider 
           }
         }
       );
@@ -301,7 +305,82 @@ const handleAddNumbers = () => {
                 </span>
               </div>
             </div>
+            {/* choose provider */}
+            <div className="space-y-2">
+              <div className="font-semibold text-sm text-slate-700">Choose Storage Provider</div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                {/* Cloudinary */}
+                <label
+                  className={`cursor-pointer rounded-xl border-2 p-4 flex items-center justify-between transition-all 
+                    ${
+                      provider === "cloudinary"
+                        ? "border-indigo-600 bg-indigo-50 shadow-md"
+                        : "border-slate-300 hover:border-indigo-400 bg-white"
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="provider"
+                      value="cloudinary"
+                      checked={provider === "cloudinary"}
+                      onChange={() => setProvider("cloudinary")}
+                      className="accent-indigo-600 w-5 h-5"
+                    />
+                    <span className="text-sm font-medium text-slate-700">Cloudinary</span>
+                  </div>
+                  {provider === "cloudinary" && (
+                    <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </label>
+
+                {/* Wasabi */}
+                <label
+                  className={`cursor-pointer rounded-xl border-2 p-4 flex items-center justify-between transition-all 
+                    ${
+                      provider === "wasabi"
+                        ? "border-indigo-600 bg-indigo-50 shadow-md"
+                        : "border-slate-300 hover:border-indigo-400 bg-white"
+                    }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="provider"
+                      value="wasabi"
+                      checked={provider === "wasabi"}
+                      onChange={() => setProvider("wasabi")}
+                      className="accent-indigo-600 w-5 h-5"
+                    />
+                    <span className="text-sm font-medium text-slate-700">Wasabi</span>
+                  </div>
+                  {provider === "wasabi" && (
+                    <div className="w-5 h-5 bg-indigo-600 rounded-full flex items-center justify-center">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </label>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Image Upload */}
               <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 hover:border-indigo-300 transition-colors bg-slate-50/50">

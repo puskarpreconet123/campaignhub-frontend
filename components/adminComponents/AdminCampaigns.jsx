@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import axios from "axios";
+import axios from "../../src/utils/axiosInstance";
 import { RefreshCw, ExternalLink, CheckCircle2, AlertCircle, Clock, History, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import StatusBox from "./adminCampaignManagement/StatusBox";

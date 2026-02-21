@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios from "../../src/utils/axiosInstance";
 import { 
   UserPlus, Mail, Lock, User, Eye, EyeOff, 
   ShieldAlert, BadgeCheck, Loader2 

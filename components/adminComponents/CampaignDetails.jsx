@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../../src/utils/axiosInstance";
 import { 
   ArrowLeft, Calendar, Users, MessageSquare, Download, 
   FileText, ImageIcon, Clock, CheckCircle2, AlertCircle, RefreshCw, 
@@ -46,26 +46,139 @@ const CampaignDetails = () => {
     URL.revokeObjectURL(url);
   };
 
-  const handleDownload = async (url, type, index) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
+  // const handleDownload = async (url, type, index) => {
+  //   try {
+  //     const response = await fetch(url);
+  //     const blob = await response.blob();
+  //     const blobUrl = window.URL.createObjectURL(blob);
 
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = `${type}_file_${index + 1}`;
+  //     const link = document.createElement("a");
+  //     link.href = blobUrl;
+  //     link.download = `${type}_file_${index + 1}`;
 
-      document.body.appendChild(link);
-      link.click();
+  //     document.body.appendChild(link);
+  //     link.click();
 
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (err) {
-      console.error("Download failed:", err);
-      window.open(url, "_blank");
+  //     document.body.removeChild(link);
+  //     window.URL.revokeObjectURL(blobUrl);
+  //   } catch (err) {
+  //     console.error("Download failed:", err);
+  //     window.open(url, "_blank");
+  //   }
+  // };
+
+  const handleDownload = async (mediaId, type, index) => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await axios.get(
+      `http://localhost:5000/api/admin/campaign/${id}/media/${mediaId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const response = await fetch(res.data.url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `${type}_file_${index + 1}`;
+    document.body.appendChild(link);
+    link.click();
+
+    window.URL.revokeObjectURL(blobUrl);
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error("Download failed:", err);
+    alert("Failed to download file");
+  }
+};
+
+const handleFilePreview = async (file) => {
+  try {
+    let fileUrl = file.url;
+
+    if (file.provider === "wasabi") {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `http://localhost:5000/api/user/campaign/${campaign._id}/media/${file._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fileUrl = res.data.url;
     }
-  };
+
+    // For PDF or other documents open in new tab
+    if (file.type !== "image" && file.type !== "video") {
+      window.open(fileUrl, "_blank");
+      return;
+    }
+
+    setPreviewFile({ ...file, url: fileUrl });
+    setIsModalOpen(true);
+
+  } catch (err) {
+    console.error("Preview failed:", err);
+    alert("Failed to load preview");
+  }
+};
+
+const handlePreviewClick = async (e, file) => {
+  e.preventDefault(); // stop default <a> navigation
+
+  try {
+    let fileUrl = file.url;
+
+    // If file stored in Wasabi → get signed URL
+    if (file.provider === "wasabi") {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `http://localhost:5000/api/user/campaign/${campaign._id}/media/${file._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fileUrl = res.data.url;
+    }
+
+    // Open preview in new tab safely
+    const previewWindow = window.open("", "_blank");
+
+    if (!previewWindow) {
+      alert("Popup blocked. Please allow popups.");
+      return;
+    }
+
+    // If image → simple display
+    if (file.type === "image") {
+      previewWindow.document.write(`
+        <html>
+          <head><title>Image Preview</title></head>
+          <body style="margin:0;display:flex;align-items:center;justify-content:center;background:#111;">
+            <img src="${fileUrl}" style="max-width:100%;max-height:100vh;object-fit:contain;" />
+          </body>
+        </html>
+      `);
+    }
+
+    // If video
+    else if (file.type === "video") {
+      previewWindow.document.write(`
+        <html>
+          <head><title>Video Preview</title></head>
+          <body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;">
+            <video src="${fileUrl}" controls autoplay style="max-width:100%;max-height:100vh;"></video>
+          </body>
+        </html>
+      `);
+    }
+
+    // For PDF / other docs → direct open
+    else {
+      previewWindow.location.href = fileUrl;
+    }
+
+  } catch (err) {
+    console.error("Preview failed:", err);
+    alert("Failed to load preview");
+  }
+};
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -239,8 +352,7 @@ const CampaignDetails = () => {
                         <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                           <a
                             href={file.url}
-                            target="_blank"
-                            rel="noreferrer"
+                            onClick={(e)=>handlePreviewClick(e, file)}
                             className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
                           >
                             <Eye size={15} />
@@ -249,8 +361,8 @@ const CampaignDetails = () => {
                           <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
 
                           <button
-                            onClick={() => handleDownload(file.url, file.type, idx)}
-                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                            onClick={() => handleDownload(file._id, file.type, idx)}
+                            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-white hover:shadow-sm rounded-lg cursor-pointer transition-all"
                           >
                             <Download size={15} />
                           </button>

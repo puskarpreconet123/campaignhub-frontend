@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios from "../../src/utils/axiosInstance";
 import { Coins, UserCircle, ArrowRight, ShieldCheck, Info } from "lucide-react";
 
 const AdminCredits = () => {

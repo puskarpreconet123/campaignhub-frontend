@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import axios from "../../../src/utils/axiosInstance";
 import { 
   CheckCircle2, 
   Clock, 
@@ -159,8 +159,7 @@ const handleUpdate = async () => {
                   </p>
                 </div>
               </div>
-              
-              {/* Changed <a> to <button> for Blob handling */}
+               
               <button 
                 onClick={() => handleViewReport(campaign.report.fileKey)}
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase text-emerald-600 hover:bg-emerald-50 transition-all active:scale-95 shadow-sm"

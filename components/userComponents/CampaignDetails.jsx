@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../../src/utils/axiosInstance";
 import { 
   ArrowLeft, Calendar, Users, MessageSquare, Download, 
   FileText, ImageIcon, Clock, CheckCircle2, AlertCircle, RefreshCw, 
@@ -14,6 +14,9 @@ const CampaignDetails = () => {
   const navigate = useNavigate();
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
+    //for preview media
+  const [previewFile, setPreviewFile] = useState(null); // file object to preview
+const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -45,27 +48,58 @@ const CampaignDetails = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
-  const handleDownload = async (url, type, index) => {
+  
+const handleDownload = async (mediaId, type, index) => {
   try {
-    const response = await fetch(url);
+    const token = localStorage.getItem("token");
+    const res = await axios.get(
+      `http://localhost:5000/api/user/campaign/${id}/media/${mediaId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const response = await fetch(res.data.url);
     const blob = await response.blob();
     const blobUrl = window.URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
+
+    const link = document.createElement("a");
     link.href = blobUrl;
-    // Creates a clean name like: image_file_1.png
     link.download = `${type}_file_${index + 1}`;
-    
     document.body.appendChild(link);
     link.click();
-    
-    // Cleanup memory
-    document.body.removeChild(link);
+
     window.URL.revokeObjectURL(blobUrl);
+    document.body.removeChild(link);
   } catch (err) {
     console.error("Download failed:", err);
-    // Fallback: open in new tab if blob fails
-    window.open(url, "_blank");
+    alert("Failed to download file");
+  }
+};
+
+const handleFilePreview = async (file) => {
+  try {
+    let fileUrl = file.url;
+
+    if (file.provider === "wasabi") {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        `http://localhost:5000/api/user/campaign/${campaign._id}/media/${file._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fileUrl = res.data.url;
+    }
+
+    // For PDF or other documents open in new tab
+    if (file.type !== "image" && file.type !== "video") {
+      window.open(fileUrl, "_blank");
+      return;
+    }
+
+    setPreviewFile({ ...file, url: fileUrl });
+    setIsModalOpen(true);
+
+  } catch (err) {
+    console.error("Preview failed:", err);
+    alert("Failed to load preview");
   }
 };
 
@@ -178,20 +212,19 @@ const CampaignDetails = () => {
 
           {/* Action Dock */}
           <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <a
-              href={file.url}
-              target="_blank"
-              rel="noreferrer"
-              className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
-              title="Preview"
-            >
-              <Eye size={15} />
-            </a>
-            
+          <button
+            onClick={() => handleFilePreview(file)}
+            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white hover:shadow-sm rounded-lg transition-all cursor-pointer"
+            title="Preview"
+          >
+            <Eye size={15} />
+          </button>
+
+  
             <div className="w-px h-4 bg-slate-200 mx-0.5"></div>
 
             <button
-              onClick={() => handleDownload(file.url, file.type, idx)}
+              onClick={() => handleDownload(file._id, file.type, idx)}
               className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-white hover:shadow-sm rounded-lg transition-all cursor-pointer"
               title="Download"
             >
@@ -243,6 +276,89 @@ const CampaignDetails = () => {
           </div>
         </div>
       </div>
+{/* Premium Preview Modal */}
+{isModalOpen && previewFile && (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+    onClick={() => {
+      setIsModalOpen(false);
+      setPreviewFile(null);
+    }}
+  >
+    <div
+      className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
+            {previewFile.type === "image" ? (
+              <ImageIcon size={18} />
+            ) : (
+              <FileText size={18} />
+            )}
+          </div>
+
+          <div>
+            <p className="text-sm font-bold text-slate-800 capitalize">
+              {previewFile.type} Preview
+            </p>
+            <p className="text-xs text-slate-400">
+              Secure media viewer
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            setIsModalOpen(false);
+            setPreviewFile(null);
+          }}
+          className="text-slate-400 hover:text-red-500 text-lg font-bold transition"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="bg-slate-100 flex items-center justify-center p-6 max-h-[80vh] overflow-auto">
+        {previewFile.type === "image" && (
+          <img
+            src={previewFile.url}
+            alt="Preview"
+            className="max-h-[70vh] rounded-2xl shadow-xl object-contain"
+          />
+        )}
+
+        {previewFile.type === "video" && (
+          <video
+            src={previewFile.url}
+            controls
+            autoPlay
+            className="max-h-[70vh] rounded-2xl shadow-xl"
+          />
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-between items-center px-6 py-4 border-t border-slate-100 bg-white">
+        <span className="text-xs text-slate-400">
+          Press ESC or click outside to close
+        </span>
+
+        <button
+          onClick={() => handleDownload(previewFile._id, previewFile.type, 0)}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition"
+        >
+          <Download size={14} />
+          Download
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 };
