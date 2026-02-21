@@ -11,6 +11,8 @@ const AdminCreateUser = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  const apiURI = import.meta.env.VITE_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,7 +21,7 @@ const AdminCreateUser = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:5000/api/admin/create-user",
+        `${apiURI}/api/admin/create-user`,
         { name, email: loginId, password },
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -18,6 +18,8 @@ import { useNavigate } from "react-router-dom";
 const UserCampaignHistory = () => {
   const navigate = useNavigate();
 
+  const apiURI = import.meta.env.VITE_API_URL;
+
   /* ================================
      STATE
   ================================= */
@@ -81,7 +83,7 @@ const UserCampaignHistory = () => {
         const token = localStorage.getItem("token");
 
         const res = await axios.get(
-          `http://localhost:5000/api/user/campaign`,
+          `${apiURI}/api/user/campaign`,
           {
             headers: { Authorization: `Bearer ${token}` },
             params: {
@@ -148,7 +150,7 @@ const UserCampaignHistory = () => {
   /* ================================
      LOADING STATE
   ================================= */
-  if (loading && campaigns.length === 0) {
+  if (loading || campaigns.length === 0) {
     return (
       <div className="flex flex-col justify-center items-center py-24 space-y-4">
         <RefreshCw className="animate-spin text-indigo-600" size={40} />

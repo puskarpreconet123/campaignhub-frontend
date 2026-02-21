@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 
 const CampaignDetails = () => {
+
+  const apiURI = import.meta.env.VITE_API_URL;
+  
   const { id } = useParams();
   const navigate = useNavigate();
   const [campaign, setCampaign] = useState(null);
@@ -22,7 +25,7 @@ const [isModalOpen, setIsModalOpen] = useState(false);
     const fetchDetail = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(`http://localhost:5000/api/user/campaign/${id}`, {
+        const res = await axios.get(`${apiURI}/api/user/campaign/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setCampaign(res.data);
@@ -53,7 +56,7 @@ const handleDownload = async (mediaId, type, index) => {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.get(
-      `http://localhost:5000/api/user/campaign/${id}/media/${mediaId}`,
+      `${apiURI}/api/user/campaign/${id}/media/${mediaId}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -82,7 +85,7 @@ const handleFilePreview = async (file) => {
     if (file.provider === "wasabi") {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/user/campaign/${campaign._id}/media/${file._id}`,
+        `${apiURI}/api/user/campaign/${campaign._id}/media/${file._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fileUrl = res.data.url;

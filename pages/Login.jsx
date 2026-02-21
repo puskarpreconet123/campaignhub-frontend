@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 
 const Login = () => {
+  
+  const apiURI = import.meta.env.VITE_API_URL;
+  
   const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +29,7 @@ const Login = () => {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      const res = await axios.post(`${apiURI}/api/auth/login`, {
         loginId,
         password,
       });

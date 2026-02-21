@@ -7,6 +7,8 @@ const AdminCredits = () => {
   const [credits, setCredits] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const apiURI = import.meta.env.VITE_API_URL;
+
   const handleAssign = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -14,7 +16,7 @@ const AdminCredits = () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "http://localhost:5000/api/admin/add-credits",
+        `${apiURI}/api/admin/add-credits`,
         { userId, credits: Number(credits) },
         { headers: { Authorization: `Bearer ${token}` } }
       );

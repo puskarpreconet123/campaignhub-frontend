@@ -3,6 +3,9 @@ import { Send, Loader2, Users, MessageSquare, Plus, X, FileText, Image as ImageI
 import axios from "../../src/utils/axiosInstance";
 
 const CreateCampaignForm = () => {
+  
+  const apiURI = import.meta.env.VITE_API_URL;
+  
   const [campaignName, setCampaignName] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [phoneNumbers, setPhoneNumbers] = useState([]);
@@ -28,7 +31,7 @@ const CreateCampaignForm = () => {
     const fetchLatestUser = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/user/profile", {
+        const res = await axios.get("${apiURI}/api/user/profile", {
           headers: { Authorization: `Bearer ${token}`}
         });
         
@@ -133,7 +136,7 @@ const handleAddNumbers = () => {
       });
 
       const res = await axios.post(
-        "http://localhost:5000/api/campaign/create",
+        "${apiURI}/api/campaign/create",
         formData,
         {
           headers: {

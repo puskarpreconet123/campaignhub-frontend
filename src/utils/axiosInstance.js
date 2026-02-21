@@ -3,8 +3,10 @@ import Swal from "sweetalert2";
 
 let isSessionExpiredShown = false; // prevents multiple popups
 
+  const apiURI = import.meta.env.VITE_API_URL;
+
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: `${apiURI}/api`,
 });
 
 const logoutUser = () => {

@@ -8,9 +8,11 @@ import {
   ChevronRight,
   ChevronLeft
 } from "lucide-react";
-import { Await } from "react-router-dom";
 
 const UserCreditHistory = () => {
+  
+  const apiURI = import.meta.env.VITE_API_URL;
+
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -63,7 +65,7 @@ const UserCreditHistory = () => {
         const token = localStorage.getItem("token");
 
         const res = await axios.get(
-          "http://localhost:5000/api/user/transactions",
+          `${apiURI}/api/user/transactions`,
           {
             headers: { Authorization: `Bearer ${token}` },
             params: { page, search, limit, type },
@@ -92,7 +94,7 @@ const UserCreditHistory = () => {
     const fetchUserSync = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/user/profile", {
+      const res = await axios.get(`${apiURI}/api/user/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       localStorage.setItem("user", JSON.stringify(res.data));
@@ -103,7 +105,7 @@ const UserCreditHistory = () => {
   };
 
   /* ---------------- Loading State ---------------- */
-  if (loading && transactions.length === 0) {
+  if (loading || transactions.length === 0) {
     return (
       <div className="flex flex-col justify-center items-center py-24 space-y-4">
         <RefreshCw className="animate-spin text-indigo-600" size={40} />

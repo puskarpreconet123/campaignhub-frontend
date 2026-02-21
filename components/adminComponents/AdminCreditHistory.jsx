@@ -10,6 +10,9 @@ import {
 } from "lucide-react";
 
 const AdminCreditHistory = () => {
+
+  const apiURI = import.meta.env.VITE_API_URL;
+  
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +65,7 @@ const AdminCreditHistory = () => {
         const token = localStorage.getItem("token");
 
         const res = await axios.get(
-          "http://localhost:5000/api/admin/transactions",
+          `${apiURI}/api/admin/transactions`,
           {
             headers: { Authorization: `Bearer ${token}` },
             params: { page, search, limit, type },
@@ -89,7 +92,7 @@ const AdminCreditHistory = () => {
   }, [page, limit, search, type]);
 
   /* ---------------- Loading State ---------------- */
-  if (loading && transactions.length === 0) {
+  if (loading || transactions.length === 0) {
     return (
       <div className="flex flex-col justify-center items-center py-24 space-y-4">
         <RefreshCw className="animate-spin text-emerald-600" size={40} />

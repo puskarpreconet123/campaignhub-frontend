@@ -11,6 +11,9 @@ import {
 } from "lucide-react"; // Make sure to import these
 
 const AdminCampaignStatusHandler = ({ campaign, onStatusUpdated }) => {
+  
+  const apiURI = import.meta.env.VITE_API_URL;
+  
   const [newStatus, setNewStatus] = useState("");
   const [reportFile, setReportFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -32,7 +35,7 @@ const AdminCampaignStatusHandler = ({ campaign, onStatusUpdated }) => {
     // 1. Fetch the data using Axios
     const response = await axios.get(
       // We encode the fileKey because it contains slashes like 'reports/abc.pdf'
-      `http://localhost:5000/api/admin/statusFile/${encodeURIComponent(fileKey)}`,
+      `${apiURI}/api/admin/statusFile/${encodeURIComponent(fileKey)}`,
       {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob', // 👈 This tells Axios not to parse the data as JSON
@@ -89,7 +92,7 @@ const handleUpdate = async () => {
       formData.append("file", reportFile);
 
       const uploadRes = await axios.post(
-        `http://localhost:5000/api/admin/campaign/${campaign._id}/report`,
+        `${apiURI}/api/admin/campaign/${campaign._id}/report`,
         formData,
         {
           headers: {
@@ -109,7 +112,7 @@ const handleUpdate = async () => {
 
     // 🔹 For processing / rejected → call /status
     const res = await axios.patch(
-      `http://localhost:5000/api/admin/campaign/${campaign._id}/status`,
+      `${apiURI}/api/admin/campaign/${campaign._id}/status`,
       { status: newStatus },
       { headers: { Authorization: `Bearer ${token}` } }
     );

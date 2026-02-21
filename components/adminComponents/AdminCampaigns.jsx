@@ -6,6 +6,9 @@ import StatusBox from "./adminCampaignManagement/StatusBox";
 import CampaignCard from "./adminCampaignManagement/CampaignCard";
 
 const AdminCampaigns = ({ filter = "" }) => {
+
+  const apiURI = import.meta.env.VITE_API_URL;
+
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -55,7 +58,7 @@ useEffect(() => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const res = await axios.get(`http://localhost:5000/api/admin/all-campaigns?page=${page}&limit=${limit}&status=${filter}&search=${debouncedSearch}`, {
+      const res = await axios.get(`${apiURI}/api/admin/all-campaigns?page=${page}&limit=${limit}&status=${filter}&search=${debouncedSearch}`, {
         headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal
       });
@@ -96,7 +99,7 @@ useEffect(() => {
     return config[status] || config.pending;
   };
 
-  if (loading && campaigns.length == 0) {
+  if (loading || campaigns.length == 0) {
     return (
       <div className="flex flex-col justify-center items-center py-24 space-y-4">
         <RefreshCw className="animate-spin text-emerald-600" size={40} />

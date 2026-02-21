@@ -14,12 +14,14 @@ const CampaignDetails = () => {
   const [campaign, setCampaign] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const apiURI = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const fetchDetail = async () => {
       try {
         const token = localStorage.getItem("token");
         const res = await axios.get(
-          `http://localhost:5000/api/admin/campaign/${id}`,
+          `${apiURI}/api/admin/campaign/${id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCampaign(res.data);
@@ -71,7 +73,7 @@ const CampaignDetails = () => {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.get(
-      `http://localhost:5000/api/admin/campaign/${id}/media/${mediaId}`,
+      `${apiURI}/api/admin/campaign/${id}/media/${mediaId}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
@@ -100,7 +102,7 @@ const handleFilePreview = async (file) => {
     if (file.provider === "wasabi") {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/user/campaign/${campaign._id}/media/${file._id}`,
+        `${apiURI}/api/user/campaign/${campaign._id}/media/${file._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fileUrl = res.data.url;
@@ -131,7 +133,7 @@ const handlePreviewClick = async (e, file) => {
     if (file.provider === "wasabi") {
       const token = localStorage.getItem("token");
       const res = await axios.get(
-        `http://localhost:5000/api/user/campaign/${campaign._id}/media/${file._id}`,
+        `${apiURI}/api/user/campaign/${campaign._id}/media/${file._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fileUrl = res.data.url;
